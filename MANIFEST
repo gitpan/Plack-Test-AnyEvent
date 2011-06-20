@@ -1,0 +1,16 @@
+Build.PL
+Changes
+LICENSE
+MANIFEST
+META.yml
+README
+lib/Plack/Test/AE.pm
+lib/Plack/Test/AnyEvent.pm
+lib/Plack/Test/AnyEvent/Response.pm
+t/00-compile.t
+t/01-test.t
+xt/author/critic.t
+xt/release/dist-manifest.t
+xt/release/kwalitee.t
+xt/release/pod-coverage.t
+xt/release/pod-syntax.t
