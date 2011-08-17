@@ -5,11 +5,13 @@ author:
 build_requires:
   HTTP::Request::Common: 0
   Module::Build: 0.3601
+  Test::Class: 0
   Test::More: 0
+  parent: 0
 configure_requires:
   Module::Build: 0.3601
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.200007, CPAN::Meta::Converter version 2.110930'
+generated_by: 'Dist::Zilla version 4.200015, CPAN::Meta::Converter version 2.112150'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,11 +24,10 @@ no_index:
 requires:
   AnyEvent: 0
   Plack: 0
-  Try::Tiny: 0
   autodie: 0
   perl: 5.8.8
 resources:
-  bugtracker: http://github.com/hoelzro/plack-test-anyevent/issues
-  homepage: http://github.com/hoelzro/plack-test-anyevent
-  repository: http://github.com/hoelzro/plack-test-anyevent
-version: 0.01
+  bugtracker: https://github.com/hoelzro/plack-test-anyevent/issues
+  homepage: https://github.com/hoelzro/plack-test-anyevent
+  repository: https://github.com/hoelzro/plack-test-anyevent.git
+version: 0.02

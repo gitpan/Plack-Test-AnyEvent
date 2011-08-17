@@ -1,7 +1,7 @@
 ## no critic (RequireUseStrict)
 package Plack::Test::AnyEvent;
-BEGIN {
-  $Plack::Test::AnyEvent::VERSION = '0.01';
+{
+  $Plack::Test::AnyEvent::VERSION = '0.02';
 }
 
 ## use critic (RequireUseStrict)
@@ -14,7 +14,6 @@ use Carp;
 use HTTP::Request;
 use HTTP::Message::PSGI;
 use IO::Handle;
-use Try::Tiny;
 
 use Plack::Test::AnyEvent::Response;
 
@@ -33,11 +32,7 @@ sub test_psgi {
         $env->{'psgi.streaming'}   = 1;
         $env->{'psgi.nonblocking'} = 1;
 
-        my $res = try {
-            $app->($env);
-        } catch {
-            Plack::Test::AnyEvent::Response->from_psgi([ 500, [ 'Content-Type' => 'text/plain' ], [ $_ ] ]);
-        };
+        my $res = $app->($env);
 
         if(ref($res) eq 'CODE') {
             my ( $status, $headers, $body );
@@ -60,7 +55,9 @@ sub test_psgi {
             });
 
             unless(defined $status) {
-                $cond->recv;
+                local $SIG{__DIE__} = __PACKAGE__->exception_handler($cond);
+                my $ex = $cond->recv;
+                die $ex if defined $ex;
             }
 
             if(defined $body) {
@@ -95,7 +92,9 @@ sub test_psgi {
                 );
             }
         } else {
-            $res = Plack::Test::AnyEvent::Response->from_psgi($res);
+            unless(ref($res) eq 'Plack::Test::AnyEvent::Response') {
+                $res = Plack::Test::AnyEvent::Response->from_psgi($res);
+            }
             $res->request($req);
         }
 
@@ -103,6 +102,35 @@ sub test_psgi {
     };
 
     $client->($cb);
+}
+
+sub exception_handler {
+    my ( $class, $cond ) = @_;
+
+    return sub {
+        my $i = 0;
+
+        my @last_eval_frame;
+
+        while(my @info = caller($i)) {
+            my ( $subroutine, $evaltext ) = @info[3, 6];
+
+            if($subroutine eq '(eval)' && !defined($evaltext)) {
+                @last_eval_frame = caller($i + 1);
+                last;
+            }
+        } continue {
+            $i++;
+        }
+
+        if(@last_eval_frame) {
+            my ( $subroutine ) = $last_eval_frame[3];
+
+            if($subroutine =~ /^AnyEvent::Impl/) {
+                $cond->send($_[0]);
+            }
+        }
+    };
 }
 
 1;
@@ -117,7 +145,7 @@ Plack::Test::AnyEvent - Run Plack::Test on AnyEvent-based PSGI applications
 
 =head1 VERSION
 
-version 0.01
+version 0.02
 
 =head1 SYNOPSIS
 
@@ -174,9 +202,105 @@ the event loop when you're done testing.
 Sets a callback to be called when a chunk is received from the application.
 A single argument is passed to the callback; namely, the chunk itself.
 
+=head1 EXCEPTION HANDLING
+
+As of version 0.02, this module handles uncaught exceptions thrown by your code.
+If the exception occurs before your PSGI application returns a response, or
+directly in the response subroutine ref (if you return a subroutine as your
+application's response), C<$cb> will propagate the exception.  Otherwise,
+the exception is propagated by C<$res-E<gt>recv>.  Here's an example:
+
+  my $app = sub {
+    die 'thrown by $cb';
+
+    return sub {
+        my ( $respond ) = @_;
+
+        die 'still thrown by $cb';
+            
+        if($streaming) {
+            my $writer = $respond->([
+                200,
+                ['Content-Type' => 'text/plain'],
+            ]);
+
+            die 'still thrown by $cb';
+
+            my $timer;
+            $timer = AnyEvent->timer(
+                after => 2,
+                cb    => sub {
+                    die 'thrown by $res->recv';
+                    $writer->write("Ok");
+                    $writer->close;
+                    undef $timer;
+                },
+            );
+        } else {
+            $respond->([
+                200,
+                ['Content-Type' => 'text/plain'],
+                ['Ok'],
+            ]);
+
+            die 'still thrown by $cb';
+        }
+    };
+  };
+
+  test_psgi $app, sub {
+    my ( $cb ) = @_;
+
+    my $res = $cb->(GET '/');
+
+    $res->on_content_received(sub {
+        ...
+    });
+
+    $res->recv;
+  };
+
+Note: The exception handling code may or may not work with your event loop.
+Please run the tests in this distribution with
+L<AnyEvent/"PERL_ANYEVENT_MODEL"> set to see if it works with your event loop
+of choice.  Patches will be accepted to accommodate loops, as long as it
+doesn't break known good ones.  The known good event loops are:
+
+=over
+
+=item Default
+
+=item Cocoa
+
+=item EV
+
+=item Event
+
+=item Glib
+
+=item Perl
+
+=back
+
+This list isn't exclusive; ie. just because your event loop isn't on this list
+doesn't mean it doesn't work.  Also, even if your event loop doesn't pass
+the exception tests, the general usage of this module (testing requests,
+handling streaming results and long polling) should work on any AnyEvent loop.
+Just don't throw any uncaught exceptions =).
+
 =head1 SEE ALSO
 
 L<AnyEvent>, L<Plack>, L<Plack::Test>
+
+=begin comment
+
+=over
+
+=item exception_handler
+
+=back
+
+=end comment
 
 =head1 AUTHOR
 
@@ -192,7 +316,7 @@ the same terms as the Perl 5 programming language system itself.
 =head1 BUGS
 
 Please report any bugs or feature requests on the bugtracker website
-http://github.com/hoelzro/plack-test-anyevent/issues
+https://github.com/hoelzro/plack-test-anyevent/issues
 
 When submitting a bug or request, please include a test-file or a
 patch to an existing test-file that illustrates the bug or desired

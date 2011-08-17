@@ -17,13 +17,20 @@ sub from_psgi {
 sub send {
     my ( $self, @values ) = @_;
 
-    return $self->{'_cond'}->send(@values);
+    $self->{'_cond'}->send(@values);
 }
 
 sub recv {
     my ( $self ) = @_;
 
-    $self->{'_cond'}->recv;
+    my $cond = $self->{'_cond'};
+
+    local $SIG{__DIE__} = Plack::Test::AnyEvent->exception_handler($cond);
+
+    my $ex = $cond->recv;
+    if($ex) {
+        die $ex;
+    }
 }
 
 sub on_content_received {
