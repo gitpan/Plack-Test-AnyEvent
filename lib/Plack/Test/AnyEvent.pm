@@ -1,7 +1,7 @@
 ## no critic (RequireUseStrict)
 package Plack::Test::AnyEvent;
 {
-  $Plack::Test::AnyEvent::VERSION = '0.02';
+  $Plack::Test::AnyEvent::VERSION = '0.03';
 }
 
 ## use critic (RequireUseStrict)
@@ -126,7 +126,7 @@ sub exception_handler {
         if(@last_eval_frame) {
             my ( $subroutine ) = $last_eval_frame[3];
 
-            if($subroutine =~ /^AnyEvent::Impl/) {
+            if($subroutine =~ /^AnyEvent::Impl|AnyEvent::CondVar::Base/) {
                 $cond->send($_[0]);
             }
         }
@@ -145,7 +145,7 @@ Plack::Test::AnyEvent - Run Plack::Test on AnyEvent-based PSGI applications
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 
