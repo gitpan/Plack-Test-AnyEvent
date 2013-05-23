@@ -1,7 +1,7 @@
 ## no critic (RequireUseStrict)
 package Plack::Test::AnyEvent;
 {
-  $Plack::Test::AnyEvent::VERSION = '0.03';
+  $Plack::Test::AnyEvent::VERSION = '0.04';
 }
 
 ## use critic (RequireUseStrict)
@@ -135,8 +135,6 @@ sub exception_handler {
 
 1;
 
-
-
 =pod
 
 =head1 NAME
@@ -145,7 +143,7 @@ Plack::Test::AnyEvent - Run Plack::Test on AnyEvent-based PSGI applications
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
@@ -323,7 +321,6 @@ patch to an existing test-file that illustrates the bug or desired
 feature.
 
 =cut
-
 
 __END__
 

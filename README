@@ -1,7 +1,7 @@
 
 
 This archive contains the distribution Plack-Test-AnyEvent,
-version 0.03:
+version 0.04:
 
   Run Plack::Test on AnyEvent-based PSGI applications
 
