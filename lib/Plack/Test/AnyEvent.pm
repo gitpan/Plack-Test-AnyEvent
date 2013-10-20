@@ -1,7 +1,7 @@
 ## no critic (RequireUseStrict)
 package Plack::Test::AnyEvent;
 {
-  $Plack::Test::AnyEvent::VERSION = '0.04';
+  $Plack::Test::AnyEvent::VERSION = '0.05';
 }
 
 ## use critic (RequireUseStrict)
@@ -95,6 +95,21 @@ sub test_psgi {
             unless(ref($res) eq 'Plack::Test::AnyEvent::Response') {
                 $res = Plack::Test::AnyEvent::Response->from_psgi($res);
             }
+            my $cond        = AnyEvent->condvar;
+            $res->{'_cond'} = $cond;
+            $res->on_content_received(sub {});
+
+            # make sure that the on_content_received callback is invoked inside
+            # of the event loop
+            my $faux_timer;
+            $faux_timer = AnyEvent->timer(
+                after => 0.001,
+                cb    => sub {
+                    undef $faux_timer;
+                    $res->on_content_received->($res->content);
+                    $cond->send;
+                },
+            );
             $res->request($req);
         }
 
@@ -143,7 +158,7 @@ Plack::Test::AnyEvent - Run Plack::Test on AnyEvent-based PSGI applications
 
 =head1 VERSION
 
-version 0.04
+version 0.05
 
 =head1 SYNOPSIS
 

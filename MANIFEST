@@ -15,6 +15,7 @@ t/03-ev.t
 t/03-event.t
 t/03-glib.t
 t/03-perl.t
+t/04-non-streaming-response-callback.t
 t/lib/Plack/Test/AnyEvent/Test.pm
 xt/author/critic.t
 xt/release/dist-manifest.t
